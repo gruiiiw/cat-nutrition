@@ -4,10 +4,194 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../lib/generated/prisma"
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+model Brand {
+  id              Int       @id @default(autoincrement())
+  name            String    @unique
+  manufacturer    String?
+  websiteUrl      String?   @map("website_url")
+  countryOfOrigin String?   @map("country_of_origin")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  products  Product[]
+  recalls   BrandRecall[]
+
+  @@map("brands")
+}
+
+model BrandRecall {
+  id               Int      @id @default(autoincrement())
+  brandId          Int      @map("brand_id")
+  recallDate       DateTime @map("recall_date")
+  reason           String
+  fdaLink          String?  @map("fda_link")
+  productsAffected String?  @map("products_affected")
+  severity         String?  // "Class I", "Class II", "Class III", "Voluntary"
+  source           String   @default("FDA")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@index([brandId])
+  @@map("brand_recalls")
+}
+
+model IngredientCategory {
+  id             Int     @id @default(autoincrement())
+  name           String  @unique
+  displayOrder   Int     @map("display_order")
+  isAllergenZone Boolean @default(false) @map("is_allergen_zone")
+
+  ingredients Ingredient[]
+
+  @@map("ingredient_categories")
+}
+
+model Ingredient {
+  id             Int     @id @default(autoincrement())
+  name           String  @unique
+  categoryId     Int?    @map("category_id")
+  commonAllergen Boolean @default(false) @map("common_allergen")
+  notes          String?
+
+  category          IngredientCategory?  @relation(fields: [categoryId], references: [id])
+  productIngredients ProductIngredient[]
+
+  @@index([name])
+  @@map("ingredients")
+}
+
+model Product {
+  id          Int     @id @default(autoincrement())
+  brandId     Int     @map("brand_id")
+  name        String
+  foodType    String  @map("food_type")    // "wet" or "dry"
+  productLine String? @map("product_line") // "Grain Free", "Original", etc.
+  texture     String?                       // "pate", "shreds", "chunks", etc.
+  flavor      String?
+  lifeStage   String? @map("life_stage")   // "kitten", "adult", "senior", "all stages"
+
+  // Size & Serving
+  sizeOz        Decimal? @map("size_oz") @db.Decimal(6, 2)
+  sizeLbs       Decimal? @map("size_lbs") @db.Decimal(6, 2)
+  servingSizeOz Decimal? @map("serving_size_oz") @db.Decimal(6, 2)
+
+  // Guaranteed Analysis (as-fed, from label)
+  crudeProteinPct Decimal? @map("crude_protein_pct") @db.Decimal(5, 2)
+  crudeFatPct     Decimal? @map("crude_fat_pct") @db.Decimal(5, 2)
+  crudeFiberPct   Decimal? @map("crude_fiber_pct") @db.Decimal(5, 2)
+  moisturePct     Decimal? @map("moisture_pct") @db.Decimal(5, 2)
+  ashPct          Decimal? @map("ash_pct") @db.Decimal(5, 2)
+
+  // Calories
+  caloriesPerOz  Decimal? @map("calories_per_oz") @db.Decimal(6, 2)
+  caloriesPerCan Decimal? @map("calories_per_can") @db.Decimal(7, 2)
+  caloriesPerCup Decimal? @map("calories_per_cup") @db.Decimal(7, 2)
+
+  // Dry Matter Basis (calculated)
+  dmbProteinPct Decimal? @map("dmb_protein_pct") @db.Decimal(5, 2)
+  dmbFatPct     Decimal? @map("dmb_fat_pct") @db.Decimal(5, 2)
+  dmbFiberPct   Decimal? @map("dmb_fiber_pct") @db.Decimal(5, 2)
+  dmbCarbPct    Decimal? @map("dmb_carb_pct") @db.Decimal(5, 2)
+  dmbAshPct     Decimal? @map("dmb_ash_pct") @db.Decimal(5, 2)
+
+  // Metabolizable Energy Basis (calculated)
+  meProteinPct Decimal? @map("me_protein_pct") @db.Decimal(5, 2)
+  meFatPct     Decimal? @map("me_fat_pct") @db.Decimal(5, 2)
+  meCarbPct    Decimal? @map("me_carb_pct") @db.Decimal(5, 2)
+
+  // Sourcing
+  aafcoStatement  String? @map("aafco_statement")
+  manufacturerUrl String? @map("manufacturer_url")
+  chewyUrl        String? @map("chewy_url")
+  amazonUrl       String? @map("amazon_url")
+  petsmartUrl     String? @map("petsmart_url")
+  petcoUrl        String? @map("petco_url")
+
+  isDiscontinued Boolean  @default(false) @map("is_discontinued")
+  lastScrapedAt  DateTime? @map("last_scraped_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  brand              Brand               @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  productIngredients ProductIngredient[]
+  prices             ProductPrice[]
+  nutrients          ProductNutrient[]
+
+  @@index([brandId])
+  @@index([foodType])
+  @@index([dmbProteinPct])
+  @@index([dmbCarbPct])
+  @@map("products")
+}
+
+model ProductIngredient {
+  id           Int @id @default(autoincrement())
+  productId    Int @map("product_id")
+  ingredientId Int @map("ingredient_id")
+  position     Int // order on label (1 = first/most prevalent)
+
+  product    Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, ingredientId])
+  @@index([productId])
+  @@index([ingredientId])
+  @@map("product_ingredients")
+}
+
+model ProductPrice {
+  id             Int      @id @default(autoincrement())
+  productId      Int      @map("product_id")
+  retailer       String   // "chewy", "amazon", "petsmart", "petco"
+  price          Decimal  @db.Decimal(8, 2)
+  pricePerOz     Decimal? @map("price_per_oz") @db.Decimal(8, 4)
+  pricePerCalorie Decimal? @map("price_per_calorie") @db.Decimal(10, 6)
+  url            String
+  inStock        Boolean  @default(true) @map("in_stock")
+  autoshipPrice  Decimal? @map("autoship_price") @db.Decimal(8, 2)
+  subscribePrice Decimal? @map("subscribe_price") @db.Decimal(8, 2)
+  scrapedAt      DateTime @default(now()) @map("scraped_at")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([retailer])
+  @@index([scrapedAt(sort: Desc)])
+  @@map("product_prices")
+}
+
+model ProductNutrient {
+  id           Int     @id @default(autoincrement())
+  productId    Int     @map("product_id")
+  nutrientName String  @map("nutrient_name")
+  value        Decimal? @db.Decimal(8, 4)
+  unit         String  @default("%")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, nutrientName])
+  @@index([productId])
+  @@map("product_nutrients")
+}
+
+model ScrapeLog {
+  id              Int      @id @default(autoincrement())
+  source          String
+  status          String   // "success", "partial", "failed"
+  productsScraped Int      @default(0) @map("products_scraped")
+  productsUpdated Int      @default(0) @map("products_updated")
+  errors          Json?
+  startedAt       DateTime @default(now()) @map("started_at")
+  finishedAt      DateTime? @map("finished_at")
+
+  @@map("scrape_log")
 }

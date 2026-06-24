@@ -1,0 +1,14 @@
+# Web scraping
+playwright==1.49.1
+beautifulsoup4==4.12.3
+lxml==5.3.0
+
+# HTTP requests (for APIs like openFDA)
+httpx==0.28.1
+
+# Database
+psycopg2-binary==2.9.10
+
+# Utilities
+python-dotenv==1.0.1
+rich==13.9.4

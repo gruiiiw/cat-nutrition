@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     const body: ProductSearchParams = await request.json();
     const {
       foodType,
-      brandId,
+      brandIds: brandId,
       minProteinDmb,
       maxCarbDmb,
       lifeStage,

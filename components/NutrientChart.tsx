@@ -55,8 +55,8 @@ export default function NutrientChart({
             width={60}
             tick={{ fontSize: 13 }}
           />
-          <Tooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
-          <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={22} label={{ position: 'right', formatter: (v: number) => `${v.toFixed(1)}%`, fontSize: 12 }}>
+          <Tooltip formatter={(value) => `${Number(value).toFixed(1)}%`} />
+          <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={22} label={{ position: 'right', formatter: (v) => `${Number(v).toFixed(1)}%`, fontSize: 12 }}>
             {data.map((entry) => (
               <Cell key={entry.name} fill={COLORS[entry.name]} />
             ))}

@@ -1,3 +1,5 @@
+export type Retailer = 'chewy' | 'amazon' | 'petsmart' | 'petco';
+
 /**
  * Affiliate tag placeholders -- replace with real IDs before launch.
  */

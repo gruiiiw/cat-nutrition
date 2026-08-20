@@ -322,7 +322,8 @@ async function searchProducts(
   }));
 
   // Score and sort products
-  const scored = mapped.map((product) => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const scored = mapped.map((product: any) => ({
     ...product,
     _score: matchScore(
       product as unknown as ProductWithDetails,
@@ -331,7 +332,8 @@ async function searchProducts(
     ),
   }));
 
-  scored.sort((a, b) => b._score - a._score);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  scored.sort((a: any, b: any) => b._score - a._score);
 
   // Return top results
   return scored.slice(0, 8) as unknown as ProductWithDetails[];

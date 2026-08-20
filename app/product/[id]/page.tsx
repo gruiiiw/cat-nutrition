@@ -313,7 +313,8 @@ export default async function ProductPage({
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-1">
-                {product.productIngredients.map((pi, index) => {
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {product.productIngredients.map((pi: any, index: number) => {
                   const isAllergenZone =
                     pi.ingredient.category?.isAllergenZone ?? false;
                   const categoryName =

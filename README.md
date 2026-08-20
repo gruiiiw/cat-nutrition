@@ -1,4 +1,16 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Cat Nutritionist | Cat Nutrition Advisor App
+
+Conducted product discovery across cat owner forums, veterinary literature, and competitor analysis to define core user needs; prioritized the product roadmap across four workstreams: guided questionnaire, allergen engine, data scraping pipeline, and affiliate monetization.
+
+Integrated a conversational AI nutritionist (Claude Haiku API) that parses natural-language descriptions of a cat's profile into structured filter parameters, enabling non-technical users to get personalized food recommendations through free-form chat.
+
+Designed two complementary user flows — a guided questionnaire (body condition scoring, health conditions, ingredient allergies, budget) and a quick-browse mode — to serve both first-time and returning users with different intent levels.
+
+Architected a PostgreSQL schema with 9 relational tables covering products, ingredients (12-category allergen-aware classification), multi-retailer pricing, and FDA recall history; built a protein-forward scoring algorithm grounded in peer-reviewed nutritional research (Laflamme & Hannah, 2013).
+
+Built an automated weekly data pipeline (Python/Playwright) scraping manufacturer sites and four retailers, feeding a nutritional analysis backend that computes dry-matter-basis and metabolizable-energy percentages for cross-product comparison.
+
+Stack: Next.js, TypeScript, Tailwind CSS, PostgreSQL (Supabase), Prisma, Claude API, Python, Vercel
 
 ## Getting Started
 

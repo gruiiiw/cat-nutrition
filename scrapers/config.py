@@ -44,7 +44,7 @@ BRANDS = {
 
 # Chewy search URLs for each brand
 CHEWY_BRAND_SEARCHES = {
-    "Fancy Feast": "https://www.chewy.com/b/fancy-feast-1320",
+    "Fancy Feast": "https://www.chewy.com/brands/fancy-feast-7347",
     "Tiki Cat": "https://www.chewy.com/b/tiki-cat-5480",
 }
 

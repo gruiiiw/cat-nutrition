@@ -58,6 +58,6 @@ RECALL_SEARCH_TERMS = [
 ]
 
 # Scraper behavior
-REQUEST_DELAY_SECONDS = 2.0  # Delay between page loads (be polite)
+REQUEST_DELAY_SECONDS = 2.0  # Delay between page loads 
 PAGE_LOAD_TIMEOUT_MS = 30_000  # Max time to wait for a page to load
 MAX_RETRIES = 3

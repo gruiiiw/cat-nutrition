@@ -456,7 +456,7 @@ async def _scrape_product(page, url: str, food_type: str) -> dict | None:
     await asyncio.sleep(REQUEST_DELAY_SECONDS)
 
     product = {
-        "source_url": url,
+        "manufacturer_url": url,
         "food_type": food_type,
     }
 
@@ -636,7 +636,7 @@ async def scrape():
                                     "product_line": product_data.get("product_line"),
                                     "flavor": product_data.get("flavor"),
                                     "texture": product_data.get("texture"),
-                                    "source_url": product_data.get("source_url"),
+                                    "manufacturer_url": product_data.get("manufacturer_url"),
                                     "life_stage": product_data.get("life_stage"),
                                     "aafco_statement": product_data.get(
                                         "aafco_statement"

@@ -2,11 +2,16 @@
 Run all scrapers in sequence.
 
 Usage:
-    python run_all.py              # Run all scrapers
-    python run_all.py --only fancy_feast   # Run one brand scraper only
-    python run_all.py --only chewy         # Run Chewy price scraper only
-    python run_all.py --only recalls       # Run recall fetcher only
-    python run_all.py --brands fancy_feast,tiki_cat  # Run specific brand scrapers only
+    python run_all.py                          # Run all (Chewy products + recalls)
+    python run_all.py --only chewy_products    # Scrape all brands from Chewy
+    python run_all.py --only recalls           # Run recall fetcher only
+    python run_all.py --brand fancy_feast      # Scrape one brand from Chewy
+    python run_all.py --brand tiki_cat         # Scrape one brand from Chewy
+
+Legacy (manufacturer-site scrapers, may not work if sites have changed):
+    python run_all.py --only fancy_feast_legacy
+    python run_all.py --only tiki_cat_legacy
+    python run_all.py --only chewy_prices
 """
 
 import argparse
@@ -16,33 +21,26 @@ import time
 from rich.console import Console
 from rich.table import Table
 
-import scrape_fancy_feast
-import scrape_tiki_cat
-import scrape_chewy
+import scrape_chewy_products
 import scrape_recalls
+
+# Legacy scrapers (kept for fallback)
+try:
+    import scrape_fancy_feast
+    import scrape_tiki_cat
+    import scrape_chewy
+    _legacy_available = True
+except ImportError:
+    _legacy_available = False
 
 console = Console()
 
-# Registry of all available scrapers
-# Each entry: (key, module, is_async, description)
-BRAND_SCRAPERS = {
-    "fancy_feast": {
-        "module": scrape_fancy_feast,
+# Primary scrapers
+PRIMARY_SCRAPERS = {
+    "chewy_products": {
+        "module": scrape_chewy_products,
         "is_async": True,
-        "description": "Fancy Feast (purina.com)",
-    },
-    "tiki_cat": {
-        "module": scrape_tiki_cat,
-        "is_async": True,
-        "description": "Tiki Cat (tikipets.com)",
-    },
-}
-
-OTHER_SCRAPERS = {
-    "chewy": {
-        "module": scrape_chewy,
-        "is_async": True,
-        "description": "Chewy prices",
+        "description": "All brands (Chewy)",
     },
     "recalls": {
         "module": scrape_recalls,
@@ -51,10 +49,31 @@ OTHER_SCRAPERS = {
     },
 }
 
-ALL_SCRAPERS = {**BRAND_SCRAPERS, **OTHER_SCRAPERS}
+# Legacy scrapers (manufacturer sites)
+LEGACY_SCRAPERS = {}
+if _legacy_available:
+    LEGACY_SCRAPERS = {
+        "fancy_feast_legacy": {
+            "module": scrape_fancy_feast,
+            "is_async": True,
+            "description": "Fancy Feast (purina.com) [legacy]",
+        },
+        "tiki_cat_legacy": {
+            "module": scrape_tiki_cat,
+            "is_async": True,
+            "description": "Tiki Cat (tikipets.com) [legacy]",
+        },
+        "chewy_prices": {
+            "module": scrape_chewy,
+            "is_async": True,
+            "description": "Chewy prices only [legacy]",
+        },
+    }
+
+ALL_SCRAPERS = {**PRIMARY_SCRAPERS, **LEGACY_SCRAPERS}
 
 
-def _run_scraper(key: str, info: dict) -> dict:
+def _run_scraper(key: str, info: dict, **kwargs) -> dict:
     """
     Run a single scraper and return a result dict with:
       status, duration, result (scraper return value), error
@@ -65,9 +84,9 @@ def _run_scraper(key: str, info: dict) -> dict:
 
     try:
         if info["is_async"]:
-            result = asyncio.run(info["module"].scrape())
+            result = asyncio.run(info["module"].scrape(**kwargs))
         else:
-            result = info["module"].scrape()
+            result = info["module"].scrape(**kwargs)
 
         duration = time.time() - start
         return {
@@ -104,20 +123,16 @@ def _print_summary(results: list[dict]):
     table.add_column("Details")
 
     for r in results:
-        # Format status with color
         if r["status"] == "success":
             status = "[green]OK[/green]"
         else:
             status = "[red]FAIL[/red]"
 
-        # Format duration
         duration = f"{r['duration']:.1f}s"
 
-        # Format details
         if r["error"]:
             details = f"[red]{r['error'][:60]}[/red]"
         elif r["result"]:
-            # Summarize the result dict
             parts = []
             for k, v in r["result"].items():
                 if k != "errors":
@@ -130,7 +145,6 @@ def _print_summary(results: list[dict]):
 
     console.print(table)
 
-    # Overall timing
     total_time = sum(r["duration"] for r in results)
     successes = sum(1 for r in results if r["status"] == "success")
     failures = sum(1 for r in results if r["status"] == "failed")
@@ -144,22 +158,29 @@ def main():
     parser.add_argument(
         "--only",
         type=str,
-        help="Run only a specific scraper (e.g., fancy_feast, chewy, recalls)",
+        help="Run only a specific scraper (e.g., chewy_products, recalls)",
     )
     parser.add_argument(
-        "--brands",
+        "--brand",
         type=str,
-        help="Comma-separated list of brand scrapers to run (e.g., fancy_feast,tiki_cat)",
+        help="Scrape a specific brand from Chewy (e.g., fancy_feast, tiki_cat)",
     )
     args = parser.parse_args()
 
     console.rule("[bold magenta]Cat Nutrition Scraper Suite[/bold magenta]")
-    start_time = time.time()
 
     results = []
 
-    if args.only:
-        # Run a single scraper
+    if args.brand:
+        # Scrape a single brand from Chewy
+        console.print(f"[dim]Scraping brand '{args.brand}' from Chewy[/dim]")
+        results.append(_run_scraper(
+            "chewy_products",
+            PRIMARY_SCRAPERS["chewy_products"],
+            brand_key=args.brand,
+        ))
+
+    elif args.only:
         key = args.only.lower().strip()
         if key not in ALL_SCRAPERS:
             console.print(f"[red]Unknown scraper: '{key}'[/red]")
@@ -167,29 +188,15 @@ def main():
             return
         results.append(_run_scraper(key, ALL_SCRAPERS[key]))
 
-    elif args.brands:
-        # Run only specified brand scrapers
-        brand_keys = [b.strip().lower() for b in args.brands.split(",")]
-        for key in brand_keys:
-            if key not in BRAND_SCRAPERS:
-                console.print(f"[red]Unknown brand scraper: '{key}'[/red]")
-                console.print(f"Available brands: {', '.join(BRAND_SCRAPERS.keys())}")
-                continue
-            results.append(_run_scraper(key, BRAND_SCRAPERS[key]))
-
     else:
-        # Run all scrapers in order: brands -> chewy -> recalls
-        console.print("[dim]Running all scrapers in order: brands -> chewy -> recalls[/dim]")
+        # Run all: Chewy products -> FDA recalls
+        console.print("[dim]Running all scrapers: Chewy products -> FDA recalls[/dim]")
 
-        # 1. Brand / manufacturer scrapers
-        for key, info in BRAND_SCRAPERS.items():
-            results.append(_run_scraper(key, info))
+        # 1. Chewy product scraper (primary data source)
+        results.append(_run_scraper("chewy_products", PRIMARY_SCRAPERS["chewy_products"]))
 
-        # 2. Chewy price scraper (runs after brands so products are up-to-date)
-        results.append(_run_scraper("chewy", OTHER_SCRAPERS["chewy"]))
-
-        # 3. Recall fetcher
-        results.append(_run_scraper("recalls", OTHER_SCRAPERS["recalls"]))
+        # 2. Recall fetcher
+        results.append(_run_scraper("recalls", PRIMARY_SCRAPERS["recalls"]))
 
     _print_summary(results)
 

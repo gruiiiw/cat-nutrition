@@ -642,7 +642,7 @@ async def scrape():
                         "brand_id": brand_id,
                         "name": product_name,
                         "food_type": food_type,
-                        "source_url": product_url,
+                        "manufacturer_url": product_url,
                     }
 
                     # Optional fields -- only include if not None

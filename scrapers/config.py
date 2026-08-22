@@ -16,11 +16,11 @@ BRANDS = {
         "website": "https://www.purina.com",
         "catalog_urls": [
             {
-                "url": "https://www.purina.com/cats/cat-food/fancy-feast/wet-cat-food",
+                "url": "https://www.purina.com/cats/cat-food/wet?items_per_page=10&sort_by=relevance&f%5B0%5D=brand%3A1285",
                 "food_type": "wet",
             },
             {
-                "url": "https://www.purina.com/cats/cat-food/fancy-feast/dry-cat-food",
+                "url": "https://www.purina.com/cats/cat-food/dry?items_per_page=10&sort_by=relevance&f%5B0%5D=brand%3A1285",
                 "food_type": "dry",
             },
         ],
@@ -42,10 +42,43 @@ BRANDS = {
     },
 }
 
-# Chewy search URLs for each brand
+# Chewy search URLs for each brand (used for price-only scraper)
 CHEWY_BRAND_SEARCHES = {
     "Fancy Feast": "https://www.chewy.com/brands/fancy-feast-7347",
     "Tiki Cat": "https://www.chewy.com/b/tiki-cat-5480",
+}
+
+# Chewy catalog pages for full product scraping (primary data source)
+# Each entry: brand key -> list of catalog URLs with food type
+CHEWY_BRAND_CATALOGS = {
+    "fancy_feast": {
+        "name": "Fancy Feast",
+        "manufacturer": "Nestlé Purina PetCare",
+        "catalog_urls": [
+            {
+                "url": "https://www.chewy.com/b/wet-food-702?Brand=Fancy%20Feast",
+                "food_type": "wet",
+            },
+            {
+                "url": "https://www.chewy.com/b/dry-food-388?Brand=Fancy%20Feast",
+                "food_type": "dry",
+            },
+        ],
+    },
+    "tiki_cat": {
+        "name": "Tiki Cat",
+        "manufacturer": "Petropics Inc.",
+        "catalog_urls": [
+            {
+                "url": "https://www.chewy.com/b/wet-food-702?Brand=Tiki%20Cat",
+                "food_type": "wet",
+            },
+            {
+                "url": "https://www.chewy.com/b/dry-food-388?Brand=Tiki%20Cat",
+                "food_type": "dry",
+            },
+        ],
+    },
 }
 
 # openFDA search terms for recall matching
